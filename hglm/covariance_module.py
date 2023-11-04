@@ -41,8 +41,8 @@ class covariance_module(nn.Module) :
         
         tril_indices = torch.tril_indices(row=self.p, col=self.p, offset=-1)
         self.L_wo_diag.data = sample_L[:, tril_indices[0], tril_indices[1]]
-        # for k in range(self.K) : 
-        #     self.L_log_diag.data[k] = torch.log(torch.diag(sample_L[k]) + eps)
+        for k in range(self.K) : 
+            self.L_log_diag.data[k] = torch.log(torch.diag(sample_L[k]) + eps)
     
         return None
     
