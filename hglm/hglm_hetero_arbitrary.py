@@ -15,7 +15,7 @@ from sklearn.linear_model import LinearRegression
 from loss.likelihood_hetero import multivariate_nll_hetero_i, multivariate_njll_hetero_i
 from loss.h_likelihood_covariance import nhll_hetero_arbitrary
 from hglm.covariance_module import covariance_module
-from util import make_reproducibility, TensorDataset, convert_to_spherical, convert_to_xyz, mae
+from util import make_reproducibility, TensorDataset, convert_to_xyz, mae
 
 def hetero_covariance_without_val(
     train_ids, train_images, train_hps, train_gazes, 

@@ -87,21 +87,21 @@ def convert_to_xyz(spherical, deg = False) :
 
     return xyz
 
-def convert_to_spherical(xyz, deg = False) :
-    '''
-    coord : [N x 3] torch array of unit vectors in terms of Euclidean coordinates [x, y, z]
+# def convert_to_spherical(xyz, deg = False) :
+#     '''
+#     coord : [N x 3] torch array of unit vectors in terms of Euclidean coordinates [x, y, z]
 
-    Convert Euclidean standard coordinates to spherical coordinates.
-    We follow the Xiong et al's notations,
-    (\phi, \theta) <- (-\cos\phi \sin\theta, -\sin\phi, -\cos\phi \cos\theta))
-    '''
+#     Convert Euclidean standard coordinates to spherical coordinates.
+#     We follow the Xiong et al's notations,
+#     (\phi, \theta) <- (-\cos\phi \sin\theta, -\sin\phi, -\cos\phi \cos\theta))
+#     '''
 
-    xyz /= torch.norm(xyz, dim=1).unsqueeze(1)
-    spherical = torch.zeros((xyz.shape[0], 2), device=xyz.device)
-    spherical[:, 0] = -torch.arcsin(xyz[:,1])
-    spherical[:, 1] = torch.arctan(xyz[:,0] / xyz[:,2])
+#     xyz /= torch.norm(xyz, dim=1).unsqueeze(1)
+#     spherical = torch.zeros((xyz.shape[0], 2), device=xyz.device)
+#     spherical[:, 0] = -torch.arcsin(xyz[:,1])
+#     spherical[:, 1] = torch.arctan(xyz[:,0] / xyz[:,2])
 
-    if deg is True : 
-        return spherical * 180 / torch.pi
-    else : 
-        return spherical
+#     if deg is True : 
+#         return spherical * 180 / torch.pi
+#     else : 
+#         return spherical

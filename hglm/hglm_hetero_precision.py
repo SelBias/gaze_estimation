@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 
 from hglm.precision_module import precision_module
 from loss.h_likelihood_precision import nhll_hetero_precision
-from util import make_reproducibility, TensorDataset, convert_to_spherical, convert_to_xyz, mae
+from util import make_reproducibility, TensorDataset, convert_to_xyz, mae
 
 def hetero_precision_without_val(
     train_ids, train_images, train_hps, train_gazes, 
