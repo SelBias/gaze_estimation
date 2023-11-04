@@ -342,9 +342,9 @@ def hetero_precision_without_val(
     train_Gamma_list_list[0] = train_Gamma.detach().cpu().numpy()
     test_Gamma_list_list[0] = test_Gamma.detach().cpu().numpy()
     precision_list[0] = precision.recover_precision().detach().cpu().numpy()
-    torch.save(mean_model.state_dict(), f'./Model/hetero_prec_{experiment_name}_pretrained_mean_model.pt')
-    torch.save(log_phi_layer.state_dict(), f'./Model/hetero_prec_{experiment_name}_pretrained_variance_model.pt')
-    torch.save(precision.state_dict(), f'./Model/hetero_prec_{experiment_name}_pretrained_precision.pt')
+    torch.save(mean_model.state_dict(), f'./results/hetero_prec_{experiment_name}_pretrained_mean_model.pt')
+    torch.save(log_phi_layer.state_dict(), f'./results/hetero_prec_{experiment_name}_pretrained_variance_model.pt')
+    torch.save(precision.state_dict(), f'./results/hetero_prec_{experiment_name}_pretrained_precision.pt')
 
     # Early stopping criterion 
     # best_nhll = train_loss_list[4, pretrain_iter-1]
@@ -692,25 +692,25 @@ def hetero_precision_without_val(
     test_Gamma_list_list[1] = test_Gamma.detach().cpu().numpy()
     precision_list[1] = precision.recover_precision().detach().cpu().numpy()
 
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_pred', prediction)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_pred_adjusted', prediction_adjusted)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_train_loss', train_loss_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_test_loss', test_loss_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_v_list', v_list_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_precision', precision_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_beta', beta_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_w', w_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_train_Gamma', train_Gamma_list_list)
-    np.save(f'./Prediction/hetero_prec_{experiment_name}_test_Gamma', test_Gamma_list_list)
+    np.save(f'./prediction/hetero_prec_{experiment_name}_pred', prediction)
+    np.save(f'./prediction/hetero_prec_{experiment_name}_pred_adjusted', prediction_adjusted)
+    np.save(f'./results/hetero_prec_{experiment_name}_train_loss', train_loss_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_test_loss', test_loss_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_v_list', v_list_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_precision', precision_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_beta', beta_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_w', w_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_train_Gamma', train_Gamma_list_list)
+    np.save(f'./results/hetero_prec_{experiment_name}_test_Gamma', test_Gamma_list_list)
 
-    torch.save(mean_model.state_dict(), f'./Model/hetero_prec_{experiment_name}_trained_mean_model.pt')
-    torch.save(best_nhll_mean_model.state_dict(), f'./Model/hetero_prec_{experiment_name}_nhll_selected_mean_model.pt')
+    torch.save(mean_model.state_dict(), f'./results/hetero_prec_{experiment_name}_trained_mean_model.pt')
+    torch.save(best_nhll_mean_model.state_dict(), f'./results/hetero_prec_{experiment_name}_nhll_selected_mean_model.pt')
     
-    torch.save(log_phi_layer.state_dict(), f'./Model/hetero_prec_{experiment_name}_trained_variance_model.pt')
-    torch.save(best_nhll_log_phi_layer.state_dict(), f'./Model/hetero_prec_{experiment_name}_nhll_selected_variance_model.pt')
+    torch.save(log_phi_layer.state_dict(), f'./results/hetero_prec_{experiment_name}_trained_variance_model.pt')
+    torch.save(best_nhll_log_phi_layer.state_dict(), f'./results/hetero_prec_{experiment_name}_nhll_selected_variance_model.pt')
     
-    torch.save(precision.state_dict(), f'./Model/hetero_prec_{experiment_name}_trained_precision.pt')
-    torch.save(best_nhll_precision.state_dict(), f'./Model/hetero_prec_{experiment_name}_nhll_selected_precision.pt')
+    torch.save(precision.state_dict(), f'./results/hetero_prec_{experiment_name}_trained_precision.pt')
+    torch.save(best_nhll_precision.state_dict(), f'./results/hetero_prec_{experiment_name}_nhll_selected_precision.pt')
     
 
     return pretrain_m_loss_list, pretrain_v_loss_list, train_m_loss_list, train_v_loss_list, train_nhll_loss_list
