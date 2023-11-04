@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm
 from sklearn.linear_model import LinearRegression
 
-from precision_module import precision_module
+from hglm.precision_module import precision_module
 from loss.h_likelihood_precision import nhll_hetero_precision
 from util import make_reproducibility, TensorDataset, convert_to_spherical, convert_to_xyz, mae
 
