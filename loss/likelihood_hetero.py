@@ -1,6 +1,10 @@
 import torch
 import numpy as np
 
+# This file does NOT contain the loss function. 
+# This is only for the evaluation, and somewhat outdated because of the numerical issues. 
+# Please see h_likelihood_***.py to see the loss functions for the training. 
+
 def multivariate_njll_hetero_i(y_i, f_hat_i, Gamma_i, v_i, sigma_sq, Sigma_v) : 
     '''
     Compute 2 x negative joint log-likelihood for i-th subject

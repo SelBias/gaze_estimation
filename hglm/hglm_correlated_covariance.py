@@ -16,7 +16,7 @@ from hglm.covariance_module import large_covariance_module
 from loss.h_likelihood_covariance import nhll_correlated_arbitrary
 from util import make_reproducibility, TensorDataset, convert_to_xyz, mae
 
-def correlated_arbitrary_without_val(
+def correlated_covariance_without_val(
     train_ids, train_images, train_hps, train_gazes, 
     test_ids, test_images, test_hps, test_gazes, 
     mean_network, hidden_features, K=2, 
