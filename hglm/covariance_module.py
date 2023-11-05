@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class covariance_module(nn.Module) :
-    def __init__(self, p=503, K=2, init_log_lamb = 0, device = torch.device('cpu')) :
+    def __init__(self, p=503, K=2, init_log_lamb = 0, device = torch.device('cpu'), dtype=torch.float) :
         super(covariance_module, self).__init__()
         '''
         Log-Cholesky parametrization of Covariance
@@ -13,9 +13,10 @@ class covariance_module(nn.Module) :
         self.p = p
         self.K = K
         self.device = device
+        self.dtype = dtype
 
-        self.L_wo_diag = nn.Parameter((torch.rand(K, int(p * (p-1) / 2), device = device) * (.2/p) - .1/p) * np.exp(0.5 * init_log_lamb))
-        self.L_log_diag = nn.Parameter(torch.zeros(K, p, device=device) + 0.5 * init_log_lamb)
+        self.L_wo_diag = nn.Parameter((torch.rand(K, int(p * (p-1) / 2), device = device, dtype=dtype) * (.2/p) - .1/p) * np.exp(0.5 * init_log_lamb))
+        self.L_log_diag = nn.Parameter(torch.zeros(K, p, device=device, dtype=dtype) + 0.5 * init_log_lamb)
 
     def recover_L(self) : 
         L = torch.cat([torch.diag(torch.exp(self.L_log_diag[k])).unsqueeze(0) for k in range(self.K)], dim=0)
@@ -26,7 +27,7 @@ class covariance_module(nn.Module) :
         return L
     
     def inv_L(self) : 
-        return torch.linalg.solve_triangular(self.recover_L(), torch.eye(self.p, device=self.device), upper=False)
+        return torch.linalg.solve_triangular(self.recover_L(), torch.eye(self.p, device=self.device, dtype=self.dtype), upper=False)
 
     def recover_Sigma(self) : 
         L = self.recover_L()
@@ -50,16 +51,17 @@ class covariance_module(nn.Module) :
 
 
 class large_covariance_module(nn.Module) :
-    def __init__(self, p=503, K=2, init_log_lamb=0, device = torch.device('cpu')) :
+    def __init__(self, p=503, K=2, init_log_lamb=0, device = torch.device('cpu'), dtype=torch.float) :
         super(large_covariance_module, self).__init__()
 
         self.p = p
         self.K = K
         self.Kp = K * p
         self.device = device
+        self.dtype=dtype
 
-        self.L_wo_diag = nn.Parameter((torch.rand(int(K*p * (K*p-1) / 2), device = device) * .2/(K*p) - .1/(K*p)) * np.exp(0.5 * init_log_lamb))
-        self.L_log_diag = nn.Parameter(torch.zeros(K*p, device=device) + 0.5 * init_log_lamb)
+        self.L_wo_diag = nn.Parameter((torch.rand(int(K*p * (K*p-1) / 2), device = device, dtype=dtype) * .2/(K*p) - .1/(K*p)) * np.exp(0.5 * init_log_lamb))
+        self.L_log_diag = nn.Parameter(torch.zeros(K*p, device=device, dtype=dtype) + 0.5 * init_log_lamb)
 
     def recover_L(self) : 
         L = torch.diag(torch.exp(self.L_log_diag))
@@ -70,7 +72,7 @@ class large_covariance_module(nn.Module) :
         return L
     
     def inv_L(self) : 
-        return torch.linalg.solve_triangular(self.recover_L(), torch.eye(self.Kp, device=self.device), upper=False)
+        return torch.linalg.solve_triangular(self.recover_L(), torch.eye(self.Kp, device=self.device, dtype=self.dtype), upper=False)
 
     def recover_Sigma(self) : 
         L = self.recover_L()
@@ -83,7 +85,7 @@ class large_covariance_module(nn.Module) :
         sample_L
         sample_L = torch.linalg.cholesky(
             sum([v_i.T.flatten().unsqueeze(1) @ v_i.T.flatten().unsqueeze(0) for v_i in v_list]) / (m-1) + 
-            torch.eye(self.Kp, device=self.device) * eps
+            torch.eye(self.Kp, device=self.device, dtype=self.dtype) * eps
         )
         
         tril_indices = torch.tril_indices(row=self.Kp, col=self.Kp, offset=-1)

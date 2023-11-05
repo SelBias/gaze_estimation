@@ -22,7 +22,7 @@ def hetero_precision_without_val(
     mean_network, hidden_features, K=2, init_log_lamb=0, initialize_Sigma=True,
     mean_lr=2e-2, variance_lr=5e-3, weight_decay=0, batch_size=1000, 
     pretrain_iter=5, m_pretrain_epoch=10, v_pretrain_epoch=10, max_iter=30, mean_epoch=10, v_step_iter=100, patience=5, 
-    device=torch.device('cpu'), experiment_name=1, SEED=None, 
+    device=torch.device('cpu'), experiment_name=1, SEED=None, dtype=torch.float, 
     normalize=True, deg=True, test_unseen=False, weighted=True, variance_check=True, verbose=True, bins=40, large_test=False, reset_opt=True, betas=(0.9, 0.999)) : 
     
     torch.cuda.empty_cache()
@@ -66,14 +66,14 @@ def hetero_precision_without_val(
 
 
     # Initialize a mean neural network and ligression coefficients for log variance
-    mean_model=mean_network(hidden_features=hidden_features, out_features=K).to(device)
+    mean_model=mean_network(hidden_features=hidden_features, out_features=K, dtype=dtype).to(device)
     p = mean_model.p
-    log_phi_layer=nn.Linear(in_features=p, out_features=K, bias=False).to(device)
+    log_phi_layer=nn.Linear(in_features=p, out_features=K, bias=False, dtype=dtype).to(device)
 
     # Initialize other parameters
     # Xavier (uniform) initialization for v_i with approximation \sqrt{504 / 6} ~ 9. 
-    v_list  = [nn.Parameter(torch.rand(p, K, device=device) * 2/9 - 1/9) for _ in range(m)]
-    precision   = precision_module(p, K, init_log_lamb, device=device).to(device)
+    v_list  = [nn.Parameter(torch.rand(p, K, device=device, dtype=dtype) * 2/9 - 1/9) for _ in range(m)]
+    precision   = precision_module(p, K, init_log_lamb, device=device, dtype=dtype).to(device)
 
     # Initialize optimizers
     mean_optimizer     = optim.Adam(list(mean_model.parameters())    + v_list,     lr=mean_lr,     weight_decay=weight_decay)

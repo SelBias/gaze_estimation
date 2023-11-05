@@ -3,14 +3,15 @@ import numpy as np
 import torch.nn as nn
 
 class precision_module(nn.Module) :
-    def __init__(self, p=503, K=2, init_log_lamb = 0, device = torch.device('cpu')) :
+    def __init__(self, p=503, K=2, init_log_lamb = 0, device = torch.device('cpu'), dtype=torch.float) :
         super(precision_module, self).__init__()
         self.p = p
         self.K = K
         self.device = device
+        self.dtype=dtype
 
-        self.L_wo_diag = nn.Parameter((torch.rand(K, int(p * (p-1) / 2), device = device) * .2/p - .1/p) * np.exp(-0.5 * init_log_lamb))
-        self.L_log_diag = nn.Parameter(torch.zeros(K, p, device=device) - 0.5 * init_log_lamb)
+        self.L_wo_diag = nn.Parameter((torch.rand(K, int(p * (p-1) / 2), device = device, dtype=dtype) * .2/p - .1/p) * np.exp(-0.5 * init_log_lamb))
+        self.L_log_diag = nn.Parameter(torch.zeros(K, p, device=device, dtype=dtype) - 0.5 * init_log_lamb)
 
     def recover_L(self) : 
         L = torch.cat([torch.diag(torch.exp(self.L_log_diag[k])).unsqueeze(0) for k in range(self.K)], dim=0)

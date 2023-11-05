@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 def nhll_hetero_precision(N, y, y_fixed, y_random, v_list, log_phi=None, precision=None, Gamma_list=None, log_phi_list=None,
-                          weighted=True, n_list=None, batch_n_list=None, LT=None, init_log_lamb=0, update='M', verbose=False) : 
+                          weighted=True, n_list=None, batch_n_list=None, LT=None, init_log_lamb=0, update='M', verbose=False, dtype=torch.float) : 
     B = len(y)
     m = len(v_list)
     p, K = v_list[0].shape
@@ -31,7 +31,7 @@ def nhll_hetero_precision(N, y, y_fixed, y_random, v_list, log_phi=None, precisi
 
         term_5 = sum([
             torch.linalg.slogdet(
-                torch.eye(p, p, device=y.device) + Gamma_list[i].T @ Gamma_list[i]
+                torch.eye(p, p, device=y.device, dtype=dtype) + Gamma_list[i].T @ Gamma_list[i]
             )[1] for i in range(m)
         ]) * K / N
 

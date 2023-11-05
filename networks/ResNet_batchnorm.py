@@ -3,113 +3,114 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ResNet_batchnorm(nn.Module) : 
-    def __init__(self, hidden_features = 500, out_features = 1) : 
+    def __init__(self, hidden_features = 500, out_features = 1, dtype=torch.float) : 
         super(ResNet_batchnorm, self).__init__()
 
         self.hidden_features = hidden_features
         self.out_features = out_features
         self.model_name = "ResNet-18 (batchnorm)"
         self.p = hidden_features + 3
+        self.dtype=dtype
 
         # conv1 : data -> conv1 -> pool1
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, padding=3, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=64), 
+            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=7, padding=3, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype), 
             nn.ReLU(), 
             nn.MaxPool2d(kernel_size=3, stride=2)
         )
 
         # pool1 -> res2a_branch1
         self.res2a_branch1 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=1, padding=0, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=64)
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=1, padding=0, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype)
         )
         # pool1 -> res2a_brach2a -> res2a_brach2b
         self.res2a_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=64), 
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype), 
             nn.ReLU(), 
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=64)
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype)
         )
         # res2a = Relu(branch1 + branch2)
         # res2a -> res2b_branch2a -> res2b_branch2b
         self.res2b_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=64), 
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype), 
             nn.ReLU(), 
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=64)
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=64, dtype=dtype)
         )
         # res2b = ReLU(res2a + res_branch2b)
         # res2b -> res3a_branch1
         self.res3a_branch1 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=1, padding=0, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=128)
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=1, padding=0, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=128, dtype=dtype)
         )
 
         # res2b -> res3a_branch2a -> res3a_branch2b
         self.res3a_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=128), 
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=128, dtype=dtype), 
             nn.ReLU(),
-            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=128)
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=128, dtype=dtype)
         )
         # res3a = ReLU(res3a_branch1 + res3a_branch2)
         # res3a -> res3b_branch2a -> res3b_branch2b
         self.res3b_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=128), 
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=128, dtype=dtype), 
             nn.ReLU(),
-            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=128)
+            nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=128, dtype=dtype)
         )
         # res3b = ReLU(res3a + res3b_branch2b)
         # res3b -> res4a_branch1
         self.res4a_branch1 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=1, padding=0, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=256)
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=1, padding=0, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=256, dtype=dtype)
         )
         # res3b -> res4a_branch2a -> res4a_branch2b
         self.res4a_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=256), 
+            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=256, dtype=dtype), 
             nn.ReLU(), 
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=256)
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=256, dtype=dtype)
         )
         # res4a = ReLU(res4a_branch1 + res4a_branch2b)
         # res4a -> res4b_branch2a -> res4b_branch2b
         self.res4b_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False),
-            nn.BatchNorm2d(num_features=256), 
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype),
+            nn.BatchNorm2d(num_features=256, dtype=dtype), 
             nn.ReLU(),  
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=256)
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=256, dtype=dtype)
         )
         # res4b = ReLU(res4a + res4b_branch2b)
         # res4b -> res5a_branch1
         self.res5a_branch1 = nn.Sequential(
-            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=1, padding=0, stride=2, bias=False), 
-            nn.BatchNorm2d(num_features=512)
+            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=1, padding=0, stride=2, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=512, dtype=dtype)
         )
         # res4b -> res5a_branch2a -> res5a_branch2b
         self.res5a_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(num_features=512), 
+            nn.Conv2d(in_channels=256, out_channels=512, kernel_size=3, padding=1, stride=2, bias=False, dtype=dtype),
+            nn.BatchNorm2d(num_features=512, dtype=dtype), 
             nn.ReLU(),  
-            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=512)
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=512, dtype=dtype)
         )
         # res5a = ReLU(res5a_branch1 + res5a_branch2b)
         # res5a -> res5b_branch2a -> res5b_branch2b
         self.res5b_branch2 = nn.Sequential(
-            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False),
-            nn.BatchNorm2d(num_features=512), 
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype),
+            nn.BatchNorm2d(num_features=512, dtype=dtype), 
             nn.ReLU(),  
-            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False), 
-            nn.BatchNorm2d(num_features=512)
+            nn.Conv2d(in_channels=512, out_channels=512, kernel_size=3, padding=1, stride=1, bias=False, dtype=dtype), 
+            nn.BatchNorm2d(num_features=512, dtype=dtype)
         )
         # res5b = ReLU(res5a + res5b_branch2b)
         # res5b -> pool5
@@ -118,13 +119,13 @@ class ResNet_batchnorm(nn.Module) :
 
         # pool5 -> ip1
         self.fc1 = nn.Sequential(
-            nn.Linear(in_features=512, out_features=hidden_features), 
-            nn.BatchNorm1d(num_features=hidden_features),
+            nn.Linear(in_features=512, out_features=hidden_features, dtype=dtype), 
+            nn.BatchNorm1d(num_features=hidden_features, dtype=dtype),
             nn.ReLU(),
             # nn.Dropout(p = 0.7),
         )
         # cat = concat(ip1, headpose)
-        self.fc2 = nn.Linear(in_features=hidden_features + 2 + 1, out_features=out_features, bias = False)
+        self.fc2 = nn.Linear(in_features=hidden_features + 2 + 1, out_features=out_features, bias = False, dtype=dtype)
 
     def get_feature_map(self, image, head_pose) : 
         '''
@@ -160,7 +161,7 @@ class ResNet_batchnorm(nn.Module) :
         x = self.fc1(x)                                             # [B x 500]
         # (ip1, headpose) -> concatenation
         output = torch.cat([
-            torch.ones_like(x[:,0]).unsqueeze(1),                   # [B x 1]
+            torch.ones_like(x[:,0], dtype=self.dtype).unsqueeze(1),                   # [B x 1]
             x, head_pose                                            # [B x 2]
         ], dim=1)                                                   # [B x 503]
         return output

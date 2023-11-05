@@ -22,7 +22,7 @@ def correlated_arbitrary_without_val(
     mean_network, hidden_features, K=2, 
     mean_lr=2e-2, variance_lr=5e-3, weight_decay=0, batch_size=1000, 
     pretrain_iter=5, m_pretrain_epoch=10, v_pretrain_epoch=10, max_iter=30, mean_epoch=10, v_step_iter=100, patience=5, 
-    device=torch.device('cpu'), experiment_name=1, SEED=None, initialize_Sigma=True,
+    device=torch.device('cpu'), experiment_name=1, SEED=None, initialize_Sigma=True, dtype=torch.float, 
     normalize=True, deg=True, test_unseen=False, weighted=True, variance_check=True, verbose=True, bins=40, large_test=False, reset_opt=True, betas=(0.9, 0.999)) : 
     
     torch.cuda.empty_cache()
@@ -33,8 +33,9 @@ def correlated_arbitrary_without_val(
         train_images = train_images / 255.0
     train_ids_unique = np.unique(train_ids)
     m = len(train_ids_unique)
-    train_hps = convert_to_spherical(train_hps, deg=deg).float()
-    train_y = convert_to_spherical(train_gazes, deg=deg).float()
+    if deg : 
+        train_hps = train_hps * 180.0 / np.pi
+        train_y = train_gazes * 180.0 / np.pi
     train_y_cuda = train_y.to(device)
     train_N = len(train_gazes)
     train_cluster = [np.where(train_ids == idx)[0] for idx in train_ids_unique]
@@ -45,33 +46,34 @@ def correlated_arbitrary_without_val(
 
     if normalize : 
         test_images = test_images / 255.0
-    test_hps = convert_to_spherical(test_hps, deg=deg).float()
-    test_y = convert_to_spherical(test_gazes, deg=deg).float()
+    if deg : 
+        test_hps = test_hps * 180.0 / np.pi
+        test_y = test_gazes * 180.0 / np.pi
     test_y_cuda = test_y.to(device)
     test_N = len(test_gazes)
     if test_unseen : 
         if large_test : 
             test_ids_unique = np.unique(test_ids)
             test_cluster = [np.where(test_ids == idx)[0] for idx in test_ids_unique]
-            test_m=len(test_ids_unique)
+            # test_m = len(test_ids_unique)
         else : 
             test_cluster = [np.arange(test_N)]
-            test_m=1
+            # test_m = 1
     else : 
         test_cluster = [np.where(test_ids == idx)[0] for idx in train_ids_unique]
-        test_m = len(test_cluster)
-    test_n_list = [len(cluster) for cluster in test_cluster]
+        # test_m = len(test_cluster)
+    # test_n_list = [len(cluster) for cluster in test_cluster]
 
 
     # Initialize a mean neural network and ligression coefficients for log variance
     mean_model=mean_network(hidden_features=hidden_features, out_features=K).to(device)
     p = mean_model.p
-    log_phi_layer=nn.Linear(in_features=p, out_features=K, bias=False).to(device)
+    log_phi_layer=nn.Linear(in_features=p, out_features=K, bias=False, dtype=dtype).to(device)
 
     # Initialize other parameters
     # Xavier (uniform) initialization for v_i with approximation \sqrt{504 / 6} ~ 9. 
-    v_list  = [nn.Parameter(torch.rand(p, K, device=device) * 2/9 - 1/9) for _ in range(m)]
-    Sigma   = large_covariance_module(p, K, device=device).to(device)
+    v_list  = [nn.Parameter(torch.rand(p, K, device=device, dtype=dtype) * 2/9 - 1/9) for _ in range(m)]
+    Sigma   = large_covariance_module(p, K, device=device, dtype=dtype).to(device)
 
     # Initialize optimizers
     mean_optimizer     = optim.Adam(list(mean_model.parameters())    + v_list,     lr=mean_lr,     weight_decay=weight_decay)
@@ -166,10 +168,10 @@ def correlated_arbitrary_without_val(
             w_beta = torch.as_tensor(w.coef_).T.to(device)
 
             # Evaluation 2 : Train MAE / MSE / NLL / NJLL / NHLL
-            Sigma_v = Sigma.recover_Sigma()
-            train_y_list = [train_y_cuda[cluster] for cluster in train_cluster]
+            # Sigma_v = Sigma.recover_Sigma()
+            # train_y_list = [train_y_cuda[cluster] for cluster in train_cluster]
             train_Gamma_list = [train_Gamma[cluster] for cluster in train_cluster]
-            train_fixed_list = [train_fixed[cluster] for cluster in train_cluster]
+            # train_fixed_list = [train_fixed[cluster] for cluster in train_cluster]
 
             train_mae  = mae(train_y_cuda, train_fixed + train_random, is_3d=False, deg=deg).item()
             train_mse  = F.mse_loss(train_y_cuda, train_fixed + train_random).item()
@@ -197,10 +199,10 @@ def correlated_arbitrary_without_val(
                 for i in range(m) : 
                     test_random[test_cluster[i]] = test_Gamma[test_cluster[i]] @ v_list[i]
 
-            test_y_list        = [test_y_cuda[cluster]   for cluster in test_cluster]
+            # test_y_list        = [test_y_cuda[cluster]   for cluster in test_cluster]
             test_Gamma_list    = [test_Gamma[cluster]    for cluster in test_cluster]
-            test_fixed_list    = [test_fixed[cluster]    for cluster in test_cluster]
-            test_adjusted_list = [test_adjusted[cluster] for cluster in test_cluster]
+            # test_fixed_list    = [test_fixed[cluster]    for cluster in test_cluster]
+            # test_adjusted_list = [test_adjusted[cluster] for cluster in test_cluster]
 
             if test_unseen is True : 
                 # LOOCV
@@ -322,9 +324,9 @@ def correlated_arbitrary_without_val(
     train_Gamma_list_list[0] = train_Gamma.detach().cpu().numpy()
     test_Gamma_list_list[0] = test_Gamma.detach().cpu().numpy()
     Sigma_list[0] = Sigma.recover_Sigma().detach().cpu().numpy()
-    torch.save(mean_model.state_dict(), f'./results/correlated_arbit_{experiment_name}_pretrained_mean_model.pt')
-    torch.save(log_phi_layer.state_dict(), f'./results/correlated_arbit_{experiment_name}_pretrained_variance_model.pt')
-    torch.save(Sigma.state_dict(), f'./results/hetero_arbit_{experiment_name}_pretrained_Sigma.pt')
+    torch.save(mean_model.state_dict(), f'./results/corr_cov_{experiment_name}_pretrained_mean_model.pt')
+    torch.save(log_phi_layer.state_dict(), f'./results/corr_cov_{experiment_name}_pretrained_variance_model.pt')
+    torch.save(Sigma.state_dict(), f'./results/corr_cov_{experiment_name}_pretrained_Sigma.pt')
 
     # Early stopping criterion 
     best_nhll = train_loss_list[4, pretrain_iter-1]
@@ -480,10 +482,10 @@ def correlated_arbitrary_without_val(
             w_beta = torch.as_tensor(w.coef_).T.to(device)
 
             # Evaluation 2 : Train MAE / MSE / NLL / NJLL / NHLL
-            Sigma_v = Sigma.recover_Sigma()
-            train_y_list = [train_y_cuda[cluster] for cluster in train_cluster]
+            # Sigma_v = Sigma.recover_Sigma()
+            # train_y_list = [train_y_cuda[cluster] for cluster in train_cluster]
             train_Gamma_list = [train_Gamma[cluster] for cluster in train_cluster]
-            train_fixed_list = [train_fixed[cluster] for cluster in train_cluster]
+            # train_fixed_list = [train_fixed[cluster] for cluster in train_cluster]
 
             train_log_phi_list = [log_phi_layer(mean_model.get_feature_map(train_images[cluster].to(device), train_hps[cluster].to(device))) for cluster in train_cluster]
 
@@ -514,10 +516,10 @@ def correlated_arbitrary_without_val(
                 for i in range(m) : 
                     test_random[test_cluster[i]] = test_Gamma[test_cluster[i]] @ v_list[i]
 
-            test_y_list        = [test_y_cuda[cluster]   for cluster in test_cluster]
+            # test_y_list        = [test_y_cuda[cluster]   for cluster in test_cluster]
             test_Gamma_list    = [test_Gamma[cluster]    for cluster in test_cluster]
-            test_fixed_list    = [test_fixed[cluster]    for cluster in test_cluster]
-            test_adjusted_list = [test_adjusted[cluster] for cluster in test_cluster]
+            # test_fixed_list    = [test_fixed[cluster]    for cluster in test_cluster]
+            # test_adjusted_list = [test_adjusted[cluster] for cluster in test_cluster]
 
             test_log_phi = log_phi_layer(mean_model.get_feature_map(test_images.to(device), test_hps.to(device)))
             test_log_phi_list = [test_log_phi[cluster] for cluster in test_cluster]
@@ -646,25 +648,25 @@ def correlated_arbitrary_without_val(
     test_Gamma_list_list[1] = test_Gamma.detach().cpu().numpy()
     Sigma_list[1] = Sigma.recover_Sigma().detach().cpu().numpy()
 
-    np.save(f'./prediction/correlated_arbit_{experiment_name}_pred', prediction)
-    np.save(f'./prediction/correlated_arbit_{experiment_name}_pred_adjusted', prediction_adjusted)
-    np.save(f'./results/correlated_arbit_{experiment_name}_train_loss', train_loss_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_test_loss', test_loss_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_v_list', v_list_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_Sigma', Sigma_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_beta', beta_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_w', w_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_train_Gamma', train_Gamma_list_list)
-    np.save(f'./results/correlated_arbit_{experiment_name}_test_Gamma', test_Gamma_list_list)
+    np.save(f'./prediction/corr_cov_{experiment_name}_pred', prediction)
+    np.save(f'./prediction/corr_cov_{experiment_name}_pred_adjusted', prediction_adjusted)
+    np.save(f'./results/corr_cov_{experiment_name}_train_loss', train_loss_list)
+    np.save(f'./results/corr_cov_{experiment_name}_test_loss', test_loss_list)
+    np.save(f'./results/corr_cov_{experiment_name}_v_list', v_list_list)
+    np.save(f'./results/corr_cov_{experiment_name}_Sigma', Sigma_list)
+    np.save(f'./results/corr_cov_{experiment_name}_beta', beta_list)
+    np.save(f'./results/corr_cov_{experiment_name}_w', w_list)
+    np.save(f'./results/corr_cov_{experiment_name}_train_Gamma', train_Gamma_list_list)
+    np.save(f'./results/corr_cov_{experiment_name}_test_Gamma', test_Gamma_list_list)
 
-    torch.save(mean_model.state_dict(), f'./results/correlated_arbit_{experiment_name}_trained_mean_model.pt')
-    torch.save(best_nhll_mean_model.state_dict(), f'./results/correlated_arbit_{experiment_name}_nhll_selected_mean_model.pt')
+    torch.save(mean_model.state_dict(), f'./results/corr_cov_{experiment_name}_trained_mean_model.pt')
+    torch.save(best_nhll_mean_model.state_dict(), f'./results/corr_cov_{experiment_name}_nhll_selected_mean_model.pt')
     
-    torch.save(log_phi_layer.state_dict(), f'./results/correlated_arbit_{experiment_name}_trained_variance_model.pt')
-    torch.save(best_nhll_log_phi_layer.state_dict(), f'./results/correlated_arbit{experiment_name}_nhll_selected_variance_model.pt')
+    torch.save(log_phi_layer.state_dict(), f'./results/corr_cov_{experiment_name}_trained_variance_model.pt')
+    torch.save(best_nhll_log_phi_layer.state_dict(), f'./results/corr_cov_{experiment_name}_nhll_selected_variance_model.pt')
     
-    torch.save(Sigma.state_dict(), f'./results/correlated_arbit{experiment_name}_trained_Sigma.pt')
-    torch.save(best_nhll_Sigma.state_dict(), f'./results/correlated_arbit_{experiment_name}_nhll_selected_Sigma.pt')
+    torch.save(Sigma.state_dict(), f'./results/corr_cov_{experiment_name}_trained_Sigma.pt')
+    torch.save(best_nhll_Sigma.state_dict(), f'./results/corr_cov_{experiment_name}_nhll_selected_Sigma.pt')
     
 
     return pretrain_m_loss_list, pretrain_v_loss_list, train_m_loss_list, train_v_loss_list, train_nhll_loss_list
