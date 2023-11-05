@@ -23,7 +23,7 @@ def nhll_hetero_precision(N, y, y_fixed, y_random, v_list, log_phi=None, precisi
         nhll = torch.sum(term_1 + term_2)
 
     elif update == 'pretrain-eval' : 
-        term_1 = torch.mean(torch.pow(y - y_fixed - y_random, 2))
+        term_1 = torch.sum(torch.mean(torch.pow(y - y_fixed - y_random, 2), dim=0))
         term_2 = sum([torch.sum(torch.pow(v_i,2)) for v_i in v_list]) / N / np.exp(init_log_lamb)
 
         term_3 = np.log(2 * np.pi) * K
@@ -36,7 +36,7 @@ def nhll_hetero_precision(N, y, y_fixed, y_random, v_list, log_phi=None, precisi
         ]) * K / N
 
         if verbose : 
-            print(f'Terms : {term_1.item():.4f}, {term_1.item():.4f}, {term_1.item():.4f}, {term_1.item():.4f}, {term_1.item():.4f}')
+            print(f'Terms : {term_1.item():.4f}, {term_2.item():.4f}, {term_3.item():.4f}, {term_4.item():.4f}, {term_5.item():.4f}')
 
         nhll = term_1 + term_2 + term_3 + term_4 + term_5
 
