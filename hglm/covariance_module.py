@@ -35,15 +35,16 @@ class covariance_module(nn.Module) :
     
     def MME_initialize(self, v_list, eps = 1e-6) : 
         m = len(v_list)
-        sample_L = torch.linalg.cholesky(
-            sum([torch.bmm(v_i.T.unsqueeze(2), v_i.T.unsqueeze(1)) for v_i in v_list]) / (m-1) + 
-            torch.eye(self.p, device=self.device).repeat(self.K,1,1) * eps
-            )
+        self.L_log_diag.data = torch.log(sum([torch.pow(v_i.T, 2) for v_i in v_list]) / (m-1) + eps)
+        # sample_L = torch.linalg.cholesky(
+        #     sum([torch.bmm(v_i.T.unsqueeze(2), v_i.T.unsqueeze(1)) for v_i in v_list]) / (m-1) + 
+        #     torch.eye(self.p, device=self.device).repeat(self.K,1,1) * eps
+        #     )
         
-        tril_indices = torch.tril_indices(row=self.p, col=self.p, offset=-1)
-        self.L_wo_diag.data = sample_L[:, tril_indices[0], tril_indices[1]]
-        for k in range(self.K) : 
-            self.L_log_diag.data[k] = torch.log(torch.diag(sample_L[k]) + eps)
+        # tril_indices = torch.tril_indices(row=self.p, col=self.p, offset=-1)
+        # self.L_wo_diag.data = sample_L[:, tril_indices[0], tril_indices[1]]
+        # for k in range(self.K) : 
+        #     self.L_log_diag.data[k] = torch.log(torch.diag(sample_L[k]) + eps)
     
         return None
     
