@@ -82,7 +82,7 @@ class large_covariance_module(nn.Module) :
     def MME_initialize(self, v_list, eps = 1e-6) : 
 
         m = len(v_list)
-        self.L_log_diag.data = torch.log(sum([torch.pow(v_i.T.flatten(),2) for v_i in v_list]) / 2 / (m-1) + eps).T
+        self.L_log_diag.data = torch.log(sum([torch.pow(v_i.T.flatten(),2) for v_i in v_list]) / (m-1) + eps).T  / 2
         # sample_L = torch.linalg.cholesky(
         #     sum([v_i.T.flatten().unsqueeze(1) @ v_i.T.flatten().unsqueeze(0) for v_i in v_list]) / (m-1) + 
         #     torch.eye(self.Kp, device=self.device, dtype=self.dtype) * eps
