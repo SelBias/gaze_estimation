@@ -90,6 +90,6 @@ class large_covariance_module(nn.Module) :
         
         tril_indices = torch.tril_indices(row=self.Kp, col=self.Kp, offset=-1)
         self.L_wo_diag.data = sample_L[tril_indices[0], tril_indices[1]]
-        self.L_log_diag.data = torch.diag(sample_L)
+        self.L_log_diag.data = torch.log(torch.diag(sample_L) + eps)
         return None
     
