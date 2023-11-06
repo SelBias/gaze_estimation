@@ -35,7 +35,7 @@ class covariance_module(nn.Module) :
     
     def MME_initialize(self, v_list, eps = 1e-6) : 
         m = len(v_list)
-        self.L_log_diag.data = torch.log(sum([torch.pow(v_i.T, 2) for v_i in v_list]) / (m-1) + eps)
+        self.L_log_diag.data = torch.log(sum([torch.pow(v_i.T, 2) for v_i in v_list]) / (m-1) + eps) / 2
         # sample_L = torch.linalg.cholesky(
         #     sum([torch.bmm(v_i.T.unsqueeze(2), v_i.T.unsqueeze(1)) for v_i in v_list]) / (m-1) + 
         #     torch.eye(self.p, device=self.device).repeat(self.K,1,1) * eps
