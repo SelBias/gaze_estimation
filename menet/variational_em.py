@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-def EM_update(y_list, Gamma_list, beta, v_list, sigma_sq, Sigma_v, n_list, use_woodbury = False) : 
+def EM_update(y_list, Gamma_list, beta, sigma_sq, Sigma_v, n_list, use_woodbury = False, device=torch.device('cpu')) : 
     '''
     Update v_list, sigma_sq and Sigma_v according to variational SGD + EM algorithm. 
 
@@ -26,7 +26,7 @@ def EM_update(y_list, Gamma_list, beta, v_list, sigma_sq, Sigma_v, n_list, use_w
 
     if use_woodbury : 
         inv_V_list = [
-            torch.eye(n_list[i]).repeat(K,1,1) / sigma_sq.view(-1,1,1) - torch.bmm(
+            torch.eye(n_list[i], device=device).repeat(K,1,1) / sigma_sq.view(-1,1,1) - torch.bmm(
                 Gamma_list[i].repeat(K,1,1), 
                 torch.bmm(
                     torch.linalg.inv(
@@ -38,7 +38,7 @@ def EM_update(y_list, Gamma_list, beta, v_list, sigma_sq, Sigma_v, n_list, use_w
             ) / sigma_sq.pow(2).view(-1,1,1) for i in range(m)]
     else : 
         inv_V_list = [torch.linalg.inv(
-            torch.eye(n_list[i]).repeat(K,1,1) * sigma_sq.view(-1,1,1) + 
+            torch.eye(n_list[i], device=device).repeat(K,1,1) * sigma_sq.view(-1,1,1) + 
             torch.bmm(Gamma_list[i].repeat(K,1,1), torch.bmm(Sigma_v, Gamma_list[i].T.repeat(K,1,1)))
         ) for i in range(m)]
 

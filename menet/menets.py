@@ -149,7 +149,7 @@ def MeNets(
             ]
             beta = model.fc2.weight.data.T.detach()
 
-            v_list, sigma_sq, Sigma_v = EM_update(train_y_list, train_Gamma_list, beta, v_list, sigma_sq, Sigma_v, train_n_list, False)
+            v_list, sigma_sq, Sigma_v = EM_update(train_y_list, train_Gamma_list, beta, sigma_sq, Sigma_v, train_n_list, False, device)
 
             train_njll = sum([multivariate_njll_i(train_y_list[i], train_Gamma_list[i], beta, v_list[i], sigma_sq, Sigma_v) for i in range(train_m)]).item() / train_N
             print(f'{iter}-th iter train negative (log) joint likelihood : {train_njll}')
