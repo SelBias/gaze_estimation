@@ -215,10 +215,10 @@ def MeNets(
             test_mae  = mae(test_fixed + test_random, test_gazes_cuda, is_3d=False, deg=False).item()
             test_mae_adjusted  = mae(test_fixed + test_adjusted, test_gazes_cuda, is_3d=False, deg=False).item()
 
-            print(f'{iter}-iter train MAE, NJLL : {train_loss_list[1,best_index]:.4f} deg, {train_loss_list[0,best_index]:.4f}')
-            print(f'{iter}-iter test MAE (fixed) : {test_loss_list[0,best_index]:.4f} deg')
-            print(f'{iter}-iter test MAE : {test_loss_list[1,best_index]:.4f} deg')
-            print(f'{iter}-iter test MAE (adjusted) : {test_loss_list[2,best_index]:.4f} deg')
+            print(f'{iter}-iter train MAE, NJLL : {train_mae:.4f} deg, {train_njll:.4f}')
+            print(f'{iter}-iter test MAE (fixed) : {test_mae_fixed:.4f} deg')
+            print(f'{iter}-iter test MAE : {test_mae:.4f} deg')
+            print(f'{iter}-iter test MAE (adjusted) : {test_mae_adjusted:.4f} deg')
 
         # Save
         with torch.no_grad() : 
