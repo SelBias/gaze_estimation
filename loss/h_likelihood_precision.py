@@ -86,3 +86,83 @@ def nhll_hetero_precision(N, y, y_fixed, y_random, v_list, log_phi=None, precisi
         
     return nhll
 
+
+
+def nhll_correlated_precision(
+        N, y, y_fixed, y_random, v_list, log_phi=None, precision=None, Gamma_list=None, log_phi_list=None,
+        weighted=True, n_list=None, batch_n_list=None, LT=None, update='M', verbose=False) : 
+    
+    B = len(y)
+    m = len(v_list)
+    p, K = v_list[0].shape
+
+    if update == 'pretrain' : 
+        term_1 = torch.sum(torch.pow(y - y_fixed - y_random, 2)) / B
+        if weighted : 
+            term_2 = torch.sum(sum([torch.pow(v_list[i],2) * batch_n_list[i] / n_list[i] for i in range(m)])) / B 
+        else : 
+            term_2 = torch.sum(sum([torch.pow(v_i, 2) for v_i in v_list])) / N
+
+        if verbose : 
+            print(f'Terms : {term_1}, {term_2}')
+    
+        nhll = term_1 + term_2
+
+    elif update == 'pretrain-eval' : 
+
+        term_1 = torch.sum(torch.pow(y - y_fixed - y_random, 2)) / N
+        term_2 = sum([torch.sum(torch.pow(v_i,2)) for v_i in v_list]) / N 
+        term_3 = np.log(2 * np.pi) * K
+        term_4 = np.log(2 * np.pi) * p * K * m / N
+
+        prec_repeated = torch.eye(K*p, K*p, device=y.device).repeat(m,1,1) 
+        for i in range(m) : 
+            for k in range(K) : 
+                prec_repeated[i, (k*p):(k*p + p), (k*p):(k*p + p)] += Gamma_list[i].T @ Gamma_list[i]
+
+        term_5 = torch.sum(torch.linalg.slogdet(prec_repeated)[1]) / N
+
+        if verbose : 
+            print(f'Terms : {term_1.item()}, {term_2.item()}, {term_3.item()}, {term_4.item()}, {term_5.item()}')
+
+        nhll = term_1 + term_2 + term_3 + term_4 + term_5
+
+    elif update == 'M' : 
+
+        term_1 = torch.sum(torch.pow(y - y_fixed - y_random, 2) / torch.exp(log_phi)) / B
+
+        if weighted : 
+            term_2 = torch.sum(sum([torch.pow(LT @ v_list[i].T.flatten(), 2) * batch_n_list[i] / n_list[i] for i in range(m)])) / B
+        else : 
+            term_2 = torch.sum(sum([torch.pow(LT @ v_i.T.flatten(), 2) for v_i in v_list])) / N
+        
+        if verbose : 
+            print(f'Terms : {term_1.item()}, {term_2.item()}')
+
+        nhll = term_1 + term_2
+        
+    elif update == 'V' or update == 'V-full' : 
+        LT = precision.recover_LT()
+
+        term_1 = torch.sum(torch.pow(y - y_fixed - y_random, 2) / torch.exp(log_phi)) / N
+        term_2 = torch.sum(sum([torch.pow(LT @ v_i.T.flatten(), 2) for v_i in v_list])) / N
+
+        term_3 = torch.sum(log_phi + np.log(2 * np.pi)) / N
+        term_4 = -torch.sum(precision.L_log_diag - np.log(2 * np.pi)) * m / N
+
+        prec_repeated = precision.recover_precision().repeat(m,1,1)
+        for i in range(m) : 
+            for k in range(K) : 
+                prec_repeated[i, (k*p):(k*p + p), (k*p):(k*p + p)] += Gamma_list[i].T @ torch.diag(torch.exp(-log_phi_list[i][:,k])) @ Gamma_list[i]
+
+        term_5 = torch.sum(torch.linalg.slogdet(prec_repeated)[1]) / N
+
+        if verbose : 
+            print(f'Terms : {term_1.item()}, {term_2.item()}, {term_3.item()}, {term_4.item()}, {term_5.item()}')
+
+        nhll = term_1 + term_2 + term_3 + term_4 + term_5
+
+    else : 
+        nhll = 1e8
+        
+    return nhll
