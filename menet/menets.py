@@ -73,7 +73,7 @@ def MeNets(
     prediction_adjusted = np.zeros((max_iter, test_N, 3))
 
     
-    train_loss_list = []
+    train_nn_loss_list = []
     train_loss_list = np.zeros((2, max_iter))
     test_loss_list  = np.zeros((3, max_iter))
 
@@ -123,7 +123,7 @@ def MeNets(
                 opt.zero_grad()
                 train_loss = F.mse_loss(y, model(image, hp))
                 train_loss.backward()
-                train_loss_list.append(train_loss.item())
+                train_nn_loss_list.append(train_loss.item())
                 opt.step()
                 scheduler.step()
 
