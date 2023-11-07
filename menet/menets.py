@@ -45,6 +45,8 @@ def MeNets(
     torch.cuda.empty_cache()
     if SEED is not None : 
         make_reproducibility(SEED)
+
+    train_gazes_cuda = train_gazes.to(device)
     
     train_N = len(train_gazes)
     train_ids_unique = np.unique(train_ids)
@@ -190,7 +192,7 @@ def MeNets(
             w_beta = torch.as_tensor(w.coef_).T.to(device)
             
             # Evaluation 2 : train mae
-            train_mae = mae(train_fixed + train_random, train_gazes, is_3d=False, deg=False).item()
+            train_mae = mae(train_fixed + train_random, train_gazes_cuda, is_3d=False, deg=False).item()
             print(f'{iter}-th iteration train MAE : {train_mae}')
 
 
@@ -208,9 +210,9 @@ def MeNets(
 
             test_adjusted = test_Gamma @ w_beta
 
-            test_mae_fixed = mae(test_gazes, test_fixed, is_3d=False, deg=False).item()
-            test_mae  = mae(test_gazes, test_fixed + test_random, is_3d=False, deg=False).item()
-            test_mae_adjusted  = mae(test_gazes, test_fixed + test_adjusted, is_3d=False, deg=False).item()
+            test_mae_fixed = mae(train_gazes_cuda, test_fixed, is_3d=False, deg=False).item()
+            test_mae  = mae(train_gazes_cuda, test_fixed + test_random, is_3d=False, deg=False).item()
+            test_mae_adjusted  = mae(train_gazes_cuda, test_fixed + test_adjusted, is_3d=False, deg=False).item()
 
             print(f'{iter}-iter train MAE, NJLL : {train_loss_list[1,best_index]:.4f} deg, {train_loss_list[0,best_index]:.4f}')
             print(f'{iter}-iter test MAE (fixed) : {test_loss_list[0,best_index]:.4f} deg')
