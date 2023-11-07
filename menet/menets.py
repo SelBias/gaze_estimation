@@ -179,7 +179,7 @@ def MeNets(
             
             train_fixed = torch.zeros(train_N, 2, device=device)
             train_random = torch.zeros(train_N, 2, device=device)
-            for i in range() : 
+            for i in range(train_m) : 
                 train_Gamma[train_cluster[i]]  = model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
                 train_fixed[train_cluster[i]]  = model.fc2(train_Gamma[train_cluster[i]])
                 train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
