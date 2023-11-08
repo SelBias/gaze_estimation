@@ -23,7 +23,7 @@ def MeNets(
         network, hidden_features=500, K=2, 
         MAXITER=320000, snapshot=300, batch_size=1000, 
         base_lr=0.1, weight_decay=0.0005, momentum=0.9, power=1.0, max_iter=2, patience=1, 
-        test_unseen=False, result_path = '.', 
+        test_unseen=False, result_path = '.', save=True, 
         device=torch.device('cpu'), SEED=None, experiment_name = 1): 
     '''
     Python implementation of MeNets. 
@@ -244,21 +244,26 @@ def MeNets(
     print(f'Selected model test MAE : {test_loss_list[1,best_index]:.4f} deg')
     print(f'Selected model test MAE (adjusted) : {test_loss_list[2,best_index]:.4f} deg')
 
+    if save : 
+        os.makedirs(f'{result_path}/menet', exist_ok=True)
+        torch.save(model.state_dict(), f'{result_path}/menet/{experiment_name}_trained_model.pt')
+        torch.save(best_model.state_dict(), f'{result_path}/menet/{experiment_name}_selected_model.pt')
 
-    os.makedirs(f'{result_path}/menet', exist_ok=True)
-    torch.save(model.state_dict(), f'{result_path}/menet/{experiment_name}_trained_model.pt')
-    torch.save(best_model.state_dict(), f'{result_path}/menet/{experiment_name}_selected_model.pt')
+        np.save(f'{result_path}/menet/{experiment_name}_pred_fixed', prediction_fixed)
+        np.save(f'{result_path}/menet/{experiment_name}_pred', prediction)
+        np.save(f'{result_path}/menet/{experiment_name}_pred_adjusted', prediction_adjusted)
+        np.save(f'{result_path}/menet/{experiment_name}_train_loss', train_loss_list)
+        np.save(f'{result_path}/menet/{experiment_name}_test_loss', test_loss_list)
+        np.save(f'{result_path}/menet/{experiment_name}_v_list', v_list_list)
+        np.save(f'{result_path}/menet/{experiment_name}_beta', beta_list)
+        np.save(f'{result_path}/menet/{experiment_name}_w', w_list)
 
-    np.save(f'{result_path}/menet/{experiment_name}_pred_fixed', prediction_fixed)
-    np.save(f'{result_path}/menet/{experiment_name}_pred', prediction)
-    np.save(f'{result_path}/menet/{experiment_name}_pred_adjusted', prediction_adjusted)
-    np.save(f'{result_path}/menet/{experiment_name}_train_loss', train_loss_list)
-    np.save(f'{result_path}/menet/{experiment_name}_test_loss', test_loss_list)
-    np.save(f'{result_path}/menet/{experiment_name}_v_list', v_list_list)
-    np.save(f'{result_path}/menet/{experiment_name}_beta', beta_list)
-    np.save(f'{result_path}/menet/{experiment_name}_w', w_list)
+        return None
     
-    return model, train_loss_list
+    else : 
+        return [
+            best_model, best_v_list, best_sigma_sq, best_Sigma_v, 
+            prediction_fixed, prediction, prediction_adjusted, train_loss_list, test_loss_list, v_list_list, beta_list, w_list]
 
 
 
