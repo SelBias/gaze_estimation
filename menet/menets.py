@@ -164,7 +164,7 @@ def MeNets(
             best_v_list = copy.deepcopy(v_list)
             best_sigma_sq = copy.deepcopy(sigma_sq)
             best_Sigma_v = copy.deepcopy(Sigma_v)
-            best_index = 0
+            best_index = iter
             update_count = 0
         
         else : 
