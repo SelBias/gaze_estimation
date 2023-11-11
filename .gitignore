@@ -160,3 +160,10 @@ cython_debug/
 #.idea/
 
 data/
+working/
+mpii_dataset/
+mpii_dataset_wrong/
+menet/*.pt
+results/*.pt
+References/
+ut/
