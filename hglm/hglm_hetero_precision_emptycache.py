@@ -159,6 +159,7 @@ def hetero_precision_without_val(
             train_fixed = torch.zeros_like(train_y_cuda)
             train_random = torch.zeros_like(train_y_cuda)
             for i in range(m) : 
+                torch.cuda.empty_cache()
                 train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
                 train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                 train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
@@ -195,9 +196,11 @@ def hetero_precision_without_val(
                 test_Gamma = torch.zeros(test_N, p, device=device)
                 test_fixed = torch.zeros_like(test_y_cuda)
                 for cluster in test_cluster : 
+                    torch.cuda.empty_cache()
                     test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
                     test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
             else : 
+                torch.cuda.empty_cache()
                 test_Gamma = mean_model.get_feature_map(test_images.to(device), test_hps.to(device)).detach()
                 test_fixed = mean_model.fc2(test_Gamma)
             
@@ -298,6 +301,7 @@ def hetero_precision_without_val(
     # Variance model Pretrain 
     print('Variance Pretrain starts')
     pretrain_start = time.time()
+    torch.cuda.empty_cache()
     mean_model.eval()
     log_phi_layer.train()
     precision.train()
@@ -378,6 +382,7 @@ def hetero_precision_without_val(
             variance_optimizer = optim.Adam(list(log_phi_layer.parameters()) + list(precision.parameters()), lr=variance_lr, weight_decay=weight_decay)
 
         # M-STEP
+        torch.cuda.empty_cache()
         precision.eval()
         LT = precision.recover_LT().detach()
         for epoch in range(mean_epoch) : 
@@ -415,6 +420,7 @@ def hetero_precision_without_val(
                 train_fixed  = torch.zeros_like(train_y_cuda)
                 train_random = torch.zeros_like(train_y_cuda)
                 for i in range(m) : 
+                    torch.cuda.empty_cache()
                     train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
                     train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                     train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
@@ -444,6 +450,7 @@ def hetero_precision_without_val(
         train_random = torch.zeros_like(train_y_cuda)
         with torch.no_grad() : 
             for i in range(m) : 
+                torch.cuda.empty_cache()
                 train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
                 train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                 train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
@@ -535,9 +542,11 @@ def hetero_precision_without_val(
                 test_Gamma = torch.zeros(test_N, p, device=device)
                 test_fixed = torch.zeros_like(test_y_cuda)
                 for cluster in test_cluster : 
+                    torch.cuda.empty_cache()
                     test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
                     test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
             else : 
+                torch.cuda.empty_cache()
                 test_Gamma = mean_model.get_feature_map(test_images.to(device), test_hps.to(device)).detach()
                 test_fixed = mean_model.fc2(test_Gamma)
             
