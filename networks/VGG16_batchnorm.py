@@ -5,7 +5,7 @@ import torchvision
 import numpy as np
 
 class VGG16(nn.Module):
-    def __init__(self, hidden_features=4096, out_features=2):
+    def __init__(self, hidden_features=4096, out_features=2, dtype=torch.float):
         super(VGG16, self).__init__()
 
         self.hidden_features=hidden_features
