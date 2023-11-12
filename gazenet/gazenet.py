@@ -18,7 +18,7 @@ def gazenet(
     test_ids, test_images, test_hps, test_gazes, 
     network, hidden_features=4096, K=2, 
     init_lr=1e-3, weight_decay=0, batch_size=256, max_iter=15000, betas=(0.9, 0.95), 
-    device=torch.device('cpu'), experiment_name=1, SEED=None, verbose=False, large_test=False) : 
+    device=torch.device('cpu'), experiment_name=1, SEED=None, verbose=False, large_test=False, test_batch_size = 300) : 
     
     torch.cuda.empty_cache()
     if SEED is not None : 
@@ -30,6 +30,7 @@ def gazenet(
     test_y_cuda = test_gazes.to(device)
     test_ids_unique = np.unique(test_ids)
     test_cluster = [np.where(test_ids == idx)[0] for idx in test_ids_unique]
+    test_N = len(test_gazes)
 
 
     model=network(hidden_features=hidden_features, out_features=K).to(device)
@@ -69,12 +70,19 @@ def gazenet(
     model.eval()
     with torch.no_grad() : 
 
+        test_y_hat = torch.zeros_like(test_y_cuda)
         if large_test : 
-            test_y_hat = torch.zeros_like(test_y_cuda)
-            for cluster in test_cluster : 
-                test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
+            test_iter = test_N // test_batch_size
+            for i in tqdm(range(test_iter)) : 
+                torch.cuda.empty_cache()
+                start_ind = test_batch_size * i
+                end_ind = test_batch_size * (i+1)
+                test_y_hat[start_ind:end_ind] = model(test_images[start_ind:end_ind].to(device), test_hps[start_ind:end_ind].to(device)).detach()
+
         else : 
-            test_y_hat = model(test_images.to(device), test_hps.to(device)).detach()
+            for cluster in test_cluster : 
+                torch.cuda.empty_cache()
+                test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
 
         
         test_mse = F.mse_loss(test_y_cuda, test_y_hat).item()
