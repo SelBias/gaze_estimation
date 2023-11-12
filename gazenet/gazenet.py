@@ -24,14 +24,13 @@ def gazenet(
     if SEED is not None : 
         make_reproducibility(SEED)
     
-    train_ids_unique = np.unique(train_ids)
+    # train_ids_unique = np.unique(train_ids)
     # train_gazes_cuda = train_gazes.to(device)
     # train_cluster = [np.where(train_ids == idx)[0] for idx in train_ids_unique]
 
     train_dataset = TensorDataset(train_images, train_hps, train_gazes)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    test_images = test_images / 255.0
     test_y_cuda = test_gazes.to(device)
     test_ids_unique = np.unique(test_ids)
     test_cluster = [np.where(test_ids == idx)[0] for idx in test_ids_unique]
@@ -45,8 +44,8 @@ def gazenet(
     # Ready for save
     train_loss_list = []
     # prediction = np.zeros((test_N, 3))
-    train_eval_list = np.zeros((2,500))
-    test_eval_list = np.zeros((2,500))
+    train_eval_list = np.zeros((2,5000))
+    test_eval_list = np.zeros((2,5000))
 
     num_iter = 0
     exceed_max_iter = False
@@ -96,9 +95,9 @@ def gazenet(
                 if large_test : 
                     test_y_hat = torch.zeros_like(test_y_cuda)
                     for cluster in test_cluster : 
-                        test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device))
+                        test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
                 else : 
-                    test_y_hat = model(test_images.to(device), test_hps.to(device))
+                    test_y_hat = model(test_images.to(device), test_hps.to(device)).detach()
 
                 
                 test_mse = F.mse_loss(test_y_cuda, test_y_hat).item()
