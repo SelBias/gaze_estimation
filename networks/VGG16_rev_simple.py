@@ -10,7 +10,7 @@ class VGG16(nn.Module):
 
         self.hidden_features=hidden_features
         self.out_features=out_features
-        self.p = hidden_features + 1
+        self.p = hidden_features + 3
         self.model_name = "VGG-16"
         
         self.convNet = nn.Sequential(
