@@ -23,7 +23,8 @@ def hetero_precision_without_val(
     mean_lr=2e-2, variance_lr=5e-3, weight_decay=0, batch_size=1000, 
     pretrain_iter=5, m_pretrain_epoch=10, v_pretrain_epoch=10, max_iter=30, mean_epoch=10, v_step_iter=100, patience=5, 
     device=torch.device('cpu'), experiment_name=1, SEED=None, dtype=torch.float, 
-    normalize=True, deg=True, test_unseen=False, weighted=True, variance_check=True, verbose=True, bins=40, large_test=False, reset_opt=True, betas=(0.9, 0.999)) : 
+    normalize=True, deg=True, test_unseen=False, weighted=True, variance_check=True, verbose=True, bins=40, large_test=False, 
+    reset_opt=True, betas=(0.9, 0.999), eval_batch_size = 300) : 
     
     torch.cuda.empty_cache()
     if SEED is not None : 
@@ -159,9 +160,15 @@ def hetero_precision_without_val(
             train_fixed = torch.zeros_like(train_y_cuda)
             train_random = torch.zeros_like(train_y_cuda)
             for i in range(m) : 
-                torch.cuda.empty_cache()
-                train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
-                train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
+                eval_iter = train_n_list[i] // eval_batch_size
+                for ind in range(eval_iter) : 
+                    torch.cuda.empty_cache()
+                    eval_indices = train_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                    train_Gamma[eval_indices]  = mean_model.get_feature_map(train_images[eval_indices].to(device), train_hps[eval_indices].to(device)).detach()
+                    train_fixed[eval_indices]  = mean_model.fc2(train_Gamma[eval_indices])
+                    # train_random[eval_indices] = train_Gamma[eval_indices] @ v_list[i]
+                # train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
+                # train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                 train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
 
             w = LinearRegression(fit_intercept=False)
@@ -195,10 +202,16 @@ def hetero_precision_without_val(
             if large_test : 
                 test_Gamma = torch.zeros(test_N, p, device=device)
                 test_fixed = torch.zeros_like(test_y_cuda)
-                for cluster in test_cluster : 
-                    torch.cuda.empty_cache()
-                    test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
-                    test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
+                for i in range(test_m) : 
+                    eval_iter = test_n_list[i] // eval_batch_size
+                    for ind in range(eval_iter) : 
+                        torch.cuda.empty_cache()
+                        eval_indices = test_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                        test_Gamma[eval_indices]  = mean_model.get_feature_map(test_images[eval_indices].to(device), test_hps[eval_indices].to(device)).detach()
+                        test_fixed[eval_indices]  = mean_model.fc2(test_Gamma[eval_indices])
+                    # torch.cuda.empty_cache()
+                    # test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
+                    # test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
             else : 
                 torch.cuda.empty_cache()
                 test_Gamma = mean_model.get_feature_map(test_images.to(device), test_hps.to(device)).detach()
@@ -309,9 +322,16 @@ def hetero_precision_without_val(
         train_y_hat = torch.zeros(train_N, K, device=device)
         train_eps = torch.zeros(train_N, K, device=device)
         for i in range(m) : 
-            temp_Gamma = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device))
-            train_y_hat[train_cluster[i]] = mean_model.fc2(temp_Gamma)
-            train_y_hat[train_cluster[i]] += temp_Gamma @ v_list[i]
+            eval_iter = train_n_list[i] // eval_batch_size
+            for ind in range(eval_iter) : 
+                torch.cuda.empty_cache()
+                eval_indices = train_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                temp_Gamma  = mean_model.get_feature_map(train_images[eval_indices].to(device), train_hps[eval_indices].to(device)).detach()
+                train_y_hat[eval_indices] = mean_model.fc2(temp_Gamma)  
+                train_y_hat[eval_indices] += temp_Gamma @ v_list[i]
+            # temp_Gamma = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device))
+            # train_y_hat[train_cluster[i]] = mean_model.fc2(temp_Gamma)
+            # train_y_hat[train_cluster[i]] += temp_Gamma @ v_list[i]
             train_eps[train_cluster[i]] = train_y[train_cluster[i]].to(device) - train_y_hat[train_cluster[i]]
 
     train_log_eps_sq = torch.log(torch.pow(train_eps, 2) + 1e-10).cpu()
@@ -420,10 +440,22 @@ def hetero_precision_without_val(
                 train_fixed  = torch.zeros_like(train_y_cuda)
                 train_random = torch.zeros_like(train_y_cuda)
                 for i in range(m) : 
-                    torch.cuda.empty_cache()
-                    train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
-                    train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
+                    
+                    eval_iter = train_n_list[i] // eval_batch_size
+                    for ind in range(eval_iter) : 
+                        torch.cuda.empty_cache()
+                        eval_indices = train_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                        train_Gamma[eval_indices]  = mean_model.get_feature_map(train_images[eval_indices].to(device), train_hps[eval_indices].to(device)).detach()
+                        train_fixed[eval_indices]  = mean_model.fc2(train_Gamma[eval_indices])
+                        # train_random[eval_indices] = train_Gamma[eval_indices] @ v_list[i]
+                    # train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
+                    # train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                     train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
+
+                    # torch.cuda.empty_cache()
+                    # train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
+                    # train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
+                    # train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
                 train_Gamma_list = [train_Gamma[cluster] for cluster in train_cluster]
                 train_log_phi = torch.zeros_like(train_y_cuda)
                 for i in range(m) : 
@@ -450,10 +482,21 @@ def hetero_precision_without_val(
         train_random = torch.zeros_like(train_y_cuda)
         with torch.no_grad() : 
             for i in range(m) : 
-                torch.cuda.empty_cache()
-                train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
-                train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
+                eval_iter = train_n_list[i] // eval_batch_size
+                for ind in range(eval_iter) : 
+                    torch.cuda.empty_cache()
+                    eval_indices = train_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                    train_Gamma[eval_indices]  = mean_model.get_feature_map(train_images[eval_indices].to(device), train_hps[eval_indices].to(device)).detach()
+                    train_fixed[eval_indices]  = mean_model.fc2(train_Gamma[eval_indices])
+                    # train_random[eval_indices] = train_Gamma[eval_indices] @ v_list[i]
+                # train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
+                # train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
                 train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
+            # for i in range(m) : 
+            #     torch.cuda.empty_cache()
+            #     train_Gamma[train_cluster[i]]  = mean_model.get_feature_map(train_images[train_cluster[i]].to(device), train_hps[train_cluster[i]].to(device)).detach()
+            #     train_fixed[train_cluster[i]]  = mean_model.fc2(train_Gamma[train_cluster[i]])
+            #     train_random[train_cluster[i]] = train_Gamma[train_cluster[i]] @ v_list[i]
             train_Gamma_list = [train_Gamma[cluster] for cluster in train_cluster]
 
         for v_iter in range(v_step_iter) : 
@@ -518,7 +561,7 @@ def hetero_precision_without_val(
             train_Gamma_list = [train_Gamma[cluster] for cluster in train_cluster]
             train_fixed_list = [train_fixed[cluster] for cluster in train_cluster]
 
-            train_log_phi_list = [log_phi_layer(mean_model.get_feature_map(train_images[cluster].to(device), train_hps[cluster].to(device))) for cluster in train_cluster]
+            train_log_phi_list = [log_phi_layer(train_Gamma) for train_Gamma in train_Gamma_list]
 
             train_mae = mae(train_y_cuda, train_fixed + train_random, is_3d=False, deg=deg).item()
             train_mse = F.mse_loss(train_y_cuda, train_fixed + train_random).item()
@@ -541,10 +584,17 @@ def hetero_precision_without_val(
             if large_test : 
                 test_Gamma = torch.zeros(test_N, p, device=device)
                 test_fixed = torch.zeros_like(test_y_cuda)
-                for cluster in test_cluster : 
-                    torch.cuda.empty_cache()
-                    test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
-                    test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
+                for i in range(test_m) : 
+                    eval_iter = test_n_list[i] // eval_batch_size
+                    for ind in range(eval_iter) : 
+                        torch.cuda.empty_cache()
+                        eval_indices = test_cluster[i][(eval_batch_size * i) : (eval_batch_size * (ind+1))]
+                        test_Gamma[eval_indices]  = mean_model.get_feature_map(test_images[eval_indices].to(device), test_hps[eval_indices].to(device)).detach()
+                        test_fixed[eval_indices]  = mean_model.fc2(test_Gamma[eval_indices])
+                # for cluster in test_cluster : 
+                #     torch.cuda.empty_cache()
+                #     test_Gamma[cluster] = mean_model.get_feature_map(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
+                #     test_fixed[cluster] = mean_model.fc2(test_Gamma[cluster])
             else : 
                 torch.cuda.empty_cache()
                 test_Gamma = mean_model.get_feature_map(test_images.to(device), test_hps.to(device)).detach()
@@ -561,8 +611,12 @@ def hetero_precision_without_val(
             test_fixed_list    = [test_fixed[cluster]    for cluster in test_cluster]
             test_adjusted_list = [test_adjusted[cluster] for cluster in test_cluster]
 
-            test_log_phi = log_phi_layer(mean_model.get_feature_map(test_images.to(device), test_hps.to(device)))
+            test_log_phi = torch.zeros_like(test_y_cuda)
+            for i in range(test_m) : 
+                test_log_phi[test_cluster[i]] = log_phi_layer(test_Gamma_list[i])
             test_log_phi_list = [test_log_phi[cluster] for cluster in test_cluster]
+            # test_log_phi = log_phi_layer(mean_model.get_feature_map(test_images.to(device), test_hps.to(device)))
+            # test_log_phi_list = [test_log_phi[cluster] for cluster in test_cluster]
 
             if test_unseen is True : 
                 test_mae = mae(test_y_cuda, test_fixed, is_3d=False, deg=deg).item()
