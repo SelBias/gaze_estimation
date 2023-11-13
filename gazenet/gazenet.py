@@ -43,7 +43,7 @@ def gazenet(
     exceed_max_iter = False
     print('Main train starts')
     train_start = time.time()
-    for _ in tqdm(range(5000)) : 
+    for _ in tqdm(range(200)) : 
         if exceed_max_iter : 
             break
 
@@ -66,28 +66,27 @@ def gazenet(
                 exceed_max_iter=True
                 break
 
-    # Evaluation (only once)
-    model.eval()
-    with torch.no_grad() : 
+        # Evaluation (only once)
+        model.eval()
+        with torch.no_grad() : 
 
-        test_y_hat = torch.zeros_like(test_y_cuda)
-        if large_test : 
-            test_iter = test_N // test_batch_size
-            for i in tqdm(range(test_iter)) : 
-                torch.cuda.empty_cache()
-                start_ind = test_batch_size * i
-                end_ind = test_batch_size * (i+1)
-                test_y_hat[start_ind:end_ind] = model(test_images[start_ind:end_ind].to(device), test_hps[start_ind:end_ind].to(device)).detach()
+            test_y_hat = torch.zeros_like(test_y_cuda)
+            if large_test : 
+                test_iter = test_N // test_batch_size
+                for i in tqdm(range(test_iter)) : 
+                    torch.cuda.empty_cache()
+                    start_ind = test_batch_size * i
+                    end_ind = test_batch_size * (i+1)
+                    test_y_hat[start_ind:end_ind] = model(test_images[start_ind:end_ind].to(device), test_hps[start_ind:end_ind].to(device)).detach()
 
-        else : 
-            for cluster in test_cluster : 
-                torch.cuda.empty_cache()
-                test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
+            else : 
+                for cluster in test_cluster : 
+                    torch.cuda.empty_cache()
+                    test_y_hat[cluster] = model(test_images[cluster].to(device), test_hps[cluster].to(device)).detach()
 
         
         test_mse = F.mse_loss(test_y_cuda, test_y_hat).item()
         test_mae = mae(test_y_cuda, test_y_hat, is_3d=False, deg=False).item()
-
         print(f'GazeNet+ test MAE, MSE : {test_mae:4f} deg, {test_mse:4f}')
     prediction = convert_to_xyz(test_y_hat, deg=False).cpu().numpy()
     
