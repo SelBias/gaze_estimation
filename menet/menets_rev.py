@@ -200,9 +200,9 @@ def MeNets(
             w_list = [LinearRegression(fit_intercept=False) for _ in range(K)]
             
             for k in range(K) : 
-                w_list[k].fit(X = train_Gamma.detach(), y = train_v_list[k])
+                w_list[k].fit(X = train_Gamma.detach().cpu(), y = train_v_list[k].cpu())
             
-            nu_list = [torch.as_tensor(w.coef_).T for w in w_list]
+            nu_list = [torch.as_tensor(w.coef_).T.to(device) for w in w_list]
             
             # Evaluation 2 : train mae
             train_mae = mae(train_fixed + train_random, train_gazes_cuda, is_3d=False, deg=False).item()
@@ -280,8 +280,3 @@ def MeNets(
         return [
             best_model, best_v_list, best_sigma_sq, best_Sigma_v, 
             prediction_fixed, prediction, prediction_adjusted, train_loss_list, test_loss_list, v_list_list, beta_list]
-
-
-
-
-
