@@ -96,6 +96,7 @@ def MeNets(
     update_stop = False
 
     # Main part
+    start_time = time.time()
     print(f"EM algorithm starts")
     # Initialize fixed parts of responses
     train_y_fixed = train_gazes
@@ -252,6 +253,9 @@ def MeNets(
             v_list_list[iter]   = torch.cat([v_i.unsqueeze(0).detach() for v_i in v_list]).cpu().numpy()
             beta_list[iter]     = model.fc2.weight.T.detach().cpu().numpy()
             # w_list[iter]        = w_beta.cpu().numpy()
+
+    end_time = time.time()
+    print(f'Main train spends {(end_time - start_time):.4f} sec')
 
     # Best model results
     
