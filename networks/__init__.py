@@ -1,1 +1,1 @@
-from . import ResNet, ResNet_batchnorm, VGG16_rev
+from . import ResNet_batchnorm
